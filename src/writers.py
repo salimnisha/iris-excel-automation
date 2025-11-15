@@ -10,6 +10,13 @@ HEADER_FILL = PatternFill(fill_type="solid", start_color="B8CCE4")
 SECTION_FILL = PatternFill(fill_type="solid", start_color="DEE6F0")
 THIN_BOTTOM = Border(bottom=Side(style="thin"))
 THIN_TOP = Border(top=Side(style="thin"))
+THIN_ALL_SIDES = Border(
+    top=Side(style="thin"),
+    bottom=Side(style="thin"),
+    right=Side(style="thin"),
+    left=Side(style="thin"),
+)
+RED = "FF0000"
 
 
 def autofit_colums(ws, start_col, end_col, padding=3):
@@ -157,7 +164,7 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
     count_of_content_pivot = pivots["count_of_content"]
     addressed_status_pivot = pivots["addressed_status"]
 
-    pivots_address = {
+    pivots_ranges = {
         "overdue": {},
         "due_date": {},
         "count_of_content": {},
@@ -174,14 +181,14 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
         title=title,
         debug=debug,
     )
-    pivots_address["overdue"] = address
+    pivots_ranges["overdue"] = address
     print(
         "\n✅ 1. Overdue pivot written to Calculations tab up to row",
         address["end_row"],
     )
 
     # Pivot2: Write Due within 1-14 days pivot
-    title = "Filter: 'Due Date' between 0-14 days (includes starting date)"
+    title = "Filter: 'Due Date' 1-14 days"
     address = write_multi_index_pivot(
         ws=ws_calc,
         pivot_df=due_date_pivot,
@@ -190,7 +197,7 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
         title=title,
         debug=debug,
     )
-    pivots_address["due_date"] = address
+    pivots_ranges["due_date"] = address
     print(
         "\n✅ 2. Due Date pivot written to Calculations tab up to row",
         address["end_row"],
@@ -206,7 +213,7 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
         title=title,
         debug=debug,
     )
-    pivots_address["count_of_content"] = address
+    pivots_ranges["count_of_content"] = address
     print(
         "\n✅ 3. Count of Content pivot written to Calculations tab up to row",
         address["end_row"],
@@ -222,10 +229,103 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
         title=title,
         debug=debug,
     )
-    pivots_address["addressed_status"] = address
+    pivots_ranges["addressed_status"] = address
     print(
         "\n✅ 4. Addressed Status pivot written to Calculations tab up to row",
         address["end_row"],
     )
 
-    return pivots_address
+    return pivots_ranges
+
+
+def write_table(ws, start_row, start_col, title, header, rows, row_border=False):
+    """Write a simple table into an Openpyxl worksheet
+
+    Args:
+        ws (Worksheet): Worksheet object to write
+        start_row (int): Top left row to place title
+        start_col (int): Top left column to place title
+        title (str): Title above the header
+        header (list[str]): list of column names
+        rows (list[list)]: Table data as list of rows
+    """
+
+    # Table address to return
+    table_address = {}
+
+    # Write the title
+    cell = ws.cell(row=start_row, column=start_col, value=title)
+    cell.font = Font(bold=True, color=RED)
+
+    table_address["start_row"] = start_row
+    table_address["start_col"] = start_col
+
+    # Write the column header one row below
+    header_row = start_row + 1
+    for j, header in enumerate(header):
+        cell = ws.cell(row=header_row, column=start_col + j, value=header)
+        cell.font = Font(bold=True)
+        cell.border = THIN_ALL_SIDES
+
+    last_row = 0
+    last_col = 0
+    # Write table contents
+    data_start_row = start_row + 2
+    for i_row, row in enumerate(rows):
+        for j_col, value in enumerate(row):
+            cell = ws.cell(
+                row=data_start_row + i_row, column=start_col + j_col, value=value
+            )
+            if row_border:
+                cell.border = THIN_ALL_SIDES
+            last_row = data_start_row + i_row
+            last_col = start_col + j_col
+
+    table_address["end_row"] = last_row
+    table_address["end_col"] = last_col
+
+    return table_address
+
+
+def write_summary_tables_to_sheet(tables, ws, start_row, debug=False):
+    # -----------------------------------------------------
+    # Write the summary tables to Calculations tab
+    # -----------------------------------------------------
+    ws_calc = ws
+    open_notes_table = tables["open_notes"]
+    addressed_notes_table = tables["addressed_notes"]
+
+    table_ranges = {
+        "open_notes": {},
+        "addressed_notes": {},
+    }
+
+    # Table1: Write Open Notes Summary table
+    title = open_notes_table["title"]
+    header = open_notes_table["header"]
+    rows = open_notes_table["rows"]
+    address = write_table(
+        ws=ws_calc,
+        start_row=start_row,
+        start_col=1,  # Starts at first column
+        title=title,
+        header=header,
+        rows=rows,
+    )
+    table_ranges["open_notes"] = address
+
+    # Table2: Write Addressed Notes Summary table
+    title = addressed_notes_table["title"]
+    header = addressed_notes_table["header"]
+    rows = addressed_notes_table["rows"]
+    address = write_table(
+        ws=ws_calc,
+        start_row=start_row,
+        start_col=9,  # starts at 9th column
+        title=title,
+        header=header,
+        rows=rows,
+    )
+    table_ranges["addressed_notes"] = address
+
+    return table_ranges
