@@ -75,12 +75,15 @@ def read_excel_dataframe(
     return df
 
 
-def extract_base_date(ws, cell):
+def extract_base_date(ws, cell) -> datetime:
     """Extract date from the given sheet and cell"""
     cell_value = str(ws[cell].value)
     match = re.search(r"(\d{1,2}/\d{1,2}/\d{4})", cell_value)
 
     base_date = datetime.strptime(match.group(1), "%m/%d/%Y") if match else None
+
+    if base_date is None:
+        raise ValueError("⚠️ Base date not found!")
 
     print(
         f"📆 Base date extracted: {base_date.strftime('%Y-%m-%d') if base_date else '⚠️ Date Not Found'}"
