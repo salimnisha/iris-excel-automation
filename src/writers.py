@@ -30,6 +30,9 @@ def write_multi_index_pivot(
     - First index (main group) is written bold
     - Second index (items under main group) is indented under corresponding main group
     - Only one Values column
+
+    Returns a dict of start and end row and column values
+    {"start_row": 3, "end_row": 10, "start_col": 1, "end_col": 2}
     """
 
     # Check if dataframe is actually multi-index
@@ -38,6 +41,9 @@ def write_multi_index_pivot(
 
     level0_name, level1_name = pivot_df.index.names
     value_col_name = pivot_df.columns.to_list()[0]
+
+    # Initialize address to return
+    pivot_address = {}
 
     # ----------------------------------------------------------------
     # 1. Write the header row(s)
@@ -59,6 +65,10 @@ def write_multi_index_pivot(
     header_cell = ws.cell(row=start_row, column=start_col + 1, value=value_col_name)
     header_cell.font = Font(bold=True)
     header_cell.fill = SECTION_FILL
+
+    pivot_address["start_row"] = start_row
+    pivot_address["start_col"] = start_col
+    pivot_address["end_col"] = start_col + 1  # this is our second header_cell
 
     # ----------------------------------------------------------------
     # 2. Walk through the MultiIndex and write the rows
@@ -131,7 +141,10 @@ def write_multi_index_pivot(
             "🐞 ====== DEBUG BLOCK END: write_multi_index_pivot (report_builder.py) ======\n"
         )
 
-    return current_row
+    pivot_address["end_row"] = current_row
+
+    # return current_row
+    return pivot_address
 
 
 def write_pivot_tables_to_sheet(pivots, ws, debug=False):
@@ -144,11 +157,16 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
     count_of_content_pivot = pivots["count_of_content"]
     addressed_status_pivot = pivots["addressed_status"]
 
-    final_written_row = 0
+    pivots_address = {
+        "overdue": {},
+        "due_date": {},
+        "count_of_content": {},
+        "addressed_status": {},
+    }
 
     # Pivot1: Write Overdue pivot
     title = "Filter: 'Aged' > 0"
-    last_row = write_multi_index_pivot(
+    address = write_multi_index_pivot(
         ws=ws_calc,
         pivot_df=overdue_pivot,
         start_row=1,
@@ -156,12 +174,15 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
         title=title,
         debug=debug,
     )
-    final_written_row = max(final_written_row, last_row)
-    print("\n✅ 1. Overdue pivot written to Calculations tab up to row", last_row)
+    pivots_address["overdue"] = address
+    print(
+        "\n✅ 1. Overdue pivot written to Calculations tab up to row",
+        address["end_row"],
+    )
 
     # Pivot2: Write Due within 1-14 days pivot
     title = "Filter: 'Due Date' between 0-14 days (includes starting date)"
-    last_row = write_multi_index_pivot(
+    address = write_multi_index_pivot(
         ws=ws_calc,
         pivot_df=due_date_pivot,
         start_row=1,
@@ -169,12 +190,15 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
         title=title,
         debug=debug,
     )
-    final_written_row = max(final_written_row, last_row)
-    print("\n✅ 2. Due Date pivot written to Calculations tab up to row", last_row)
+    pivots_address["due_date"] = address
+    print(
+        "\n✅ 2. Due Date pivot written to Calculations tab up to row",
+        address["end_row"],
+    )
 
     # Pivot3: Write Count of Content
     title = "Filter: None Applied"
-    last_row = write_multi_index_pivot(
+    address = write_multi_index_pivot(
         ws=ws_calc,
         pivot_df=count_of_content_pivot,
         start_row=1,
@@ -182,14 +206,15 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
         title=title,
         debug=debug,
     )
-    final_written_row = max(final_written_row, last_row)
+    pivots_address["count_of_content"] = address
     print(
-        "\n✅ 3. Count of Content pivot written to Calculations tab up to row", last_row
+        "\n✅ 3. Count of Content pivot written to Calculations tab up to row",
+        address["end_row"],
     )
 
     # Pivot4: Write Status is Addressed
     title = "Filter: 'Status' == 'Addressed'"
-    last_row = write_multi_index_pivot(
+    address = write_multi_index_pivot(
         ws=ws_calc,
         pivot_df=addressed_status_pivot,
         start_row=1,
@@ -197,9 +222,10 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
         title=title,
         debug=debug,
     )
-    final_written_row = max(final_written_row, last_row)
+    pivots_address["addressed_status"] = address
     print(
-        "\n✅ 4. Addressed Status pivot written to Calculations tab up to row", last_row
+        "\n✅ 4. Addressed Status pivot written to Calculations tab up to row",
+        address["end_row"],
     )
 
-    return final_written_row
+    return pivots_address
