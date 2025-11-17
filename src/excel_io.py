@@ -7,6 +7,7 @@ import xlwings as xw
 import re
 from datetime import datetime
 from openpyxl import load_workbook
+import time
 
 
 def make_copy(source_file: str, debug: bool = False) -> str:
@@ -17,7 +18,7 @@ def make_copy(source_file: str, debug: bool = False) -> str:
 
     # Create tabs
     wb = load_workbook(copy_file)
-    tabs = ["Calculations", "REPORT"]
+    tabs = ["Calculations", "Report"]
     for tab in tabs:
         if tab in wb.sheetnames:
             del wb[tab]
@@ -42,6 +43,22 @@ def make_copy(source_file: str, debug: bool = False) -> str:
     return copy_file
 
 
+def load_formula_workbook(filepath: str):
+    """
+    Load workbook normally (formulas visible).
+    Safe to modify and save.
+    """
+    return load_workbook(filepath)
+
+
+def load_values_only_workbook(filepath: str):
+    """
+    Load workbook in data_only=True mode.
+    Returns a read-only safe wrapper that blocks accidental saving.
+    """
+    return load_workbook(filepath, data_only=True, read_only=True)
+
+
 def force_excel_recalc(filename: str):
     """Force complete recalculation of all formulas in the excel sheet
 
@@ -49,6 +66,9 @@ def force_excel_recalc(filename: str):
     """
     app = xw.App(visible=False)  # run in the background
     wb = app.books.open(filename)
+
+    # Give Excel time to load external references and pivot caches
+    time.sleep(0.5)
 
     # Force recalculate all formulas
     wb.app.calculate()

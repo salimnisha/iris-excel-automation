@@ -4,7 +4,10 @@
 import pandas as pd
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
+from openpyxl import load_workbook
+
 import src.constants as C
+from src.excel_io import force_excel_recalc, load_values_only_workbook
 
 
 def autofit_colums(ws, start_col, end_col, padding=3):
@@ -317,3 +320,86 @@ def write_summary_tables_to_sheet(tables, ws, start_row, debug=False):
     table_ranges["addressed_notes"] = address
 
     return table_ranges
+
+
+def copy_range_values_only(
+    ws_src,
+    ws_dst,
+    src_start_row,
+    src_start_col,
+    height,
+    width,
+    dst_start_row,
+    dst_start_col,
+):
+    """Copies a rectangular block of cells (values only) from one Excel sheet to another
+    Does NOT copy formulas or formatting.
+
+    Args:
+        ws_src (Worksheet): Source worksheet
+        ws_dst (Worksheet): Destination worksheet
+        src_start_row (int): source range start row
+        src_start_col (int): source range end row
+        height (int): source range height (rows)
+        width (int): source range width (columns)
+        dst_start_row (int): destination range start row
+        dst_start_col (int): destination range end row
+    """
+
+    # Destination range to return
+    dst_range = {"start_row": dst_start_row, "start_col": dst_start_col}
+
+    for r in range(height):
+        for c in range(width):
+            src_cell = ws_src.cell(row=src_start_row + r, column=src_start_col + c)
+            dst_cell = ws_dst.cell(row=dst_start_row + r, column=dst_start_col + c)
+
+            # Copy 'Values Only'
+            dst_cell.value = src_cell.value
+
+        dst_range["end_col"] = dst_start_col + c
+    dst_range["end_row"] = dst_start_row + r
+
+    return dst_range
+
+
+def copy_table_to_report(
+    src_path,
+    wb_src,
+    table_range,
+    report_start_row,
+    report_start_col,
+):
+    """Copy the calculated table range from source sheet (Calculations) to destination sheet (Report), given the table range
+
+    Args:
+        ws_calc (Worksheet): worksheet
+        ws_report (Worksheet): worksheet
+        table_range (dict): Dict of table range {start_row, start_col, end_row, end_col}
+        dst_start_row (int): destination sheet start row
+        dst_start_col (int): destination sheet start column
+    """
+
+    # Open a data_only mode spreadsheet to read the values (not formulas)
+    wb_src.save(src_path)
+    force_excel_recalc(src_path)
+
+    wb_values = load_values_only_workbook(src_path)
+
+    table_height = table_range["end_row"] - table_range["start_row"] + 1
+    table_width = table_range["end_col"] - table_range["start_col"] + 1
+
+    # The values are read from a new data_only worksheet, and written to the ws_report (passed via argument)
+    # ⚠️ Don't save the data_only sheet (it will remove all formulas)
+    report_range = copy_range_values_only(
+        ws_src=wb_values[C.CALC_SHEET],
+        ws_dst=wb_src[C.REPORT_SHEET],
+        src_start_row=table_range["start_row"],
+        src_start_col=table_range["start_col"],
+        height=table_height,
+        width=table_width,
+        dst_start_row=report_start_row,
+        dst_start_col=report_start_col,
+    )
+
+    return report_range
