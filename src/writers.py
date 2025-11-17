@@ -4,19 +4,7 @@
 import pandas as pd
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
-
-# Styles
-HEADER_FILL = PatternFill(fill_type="solid", start_color="B8CCE4")
-SECTION_FILL = PatternFill(fill_type="solid", start_color="DEE6F0")
-THIN_BOTTOM = Border(bottom=Side(style="thin"))
-THIN_TOP = Border(top=Side(style="thin"))
-THIN_ALL_SIDES = Border(
-    top=Side(style="thin"),
-    bottom=Side(style="thin"),
-    right=Side(style="thin"),
-    left=Side(style="thin"),
-)
-RED = "FF0000"
+import src.constants as C
 
 
 def autofit_colums(ws, start_col, end_col, padding=3):
@@ -59,19 +47,19 @@ def write_multi_index_pivot(
     if title:
         header_cell = ws.cell(row=start_row, column=start_col, value=title)
         header_cell.font = Font(bold=True)
-        header_cell.fill = HEADER_FILL
+        header_cell.fill = C.HEADER_FILL
         header_cell = ws.cell(row=start_row, column=start_col + 1, value="")
-        header_cell.fill = HEADER_FILL
+        header_cell.fill = C.HEADER_FILL
 
         start_row = start_row + 2  # Leave one row below before pivot data header
 
     # Pivot data header
     header_cell = ws.cell(row=start_row, column=start_col, value="Row Labels")
     header_cell.font = Font(bold=True)
-    header_cell.fill = SECTION_FILL
+    header_cell.fill = C.SECTION_FILL
     header_cell = ws.cell(row=start_row, column=start_col + 1, value=value_col_name)
     header_cell.font = Font(bold=True)
-    header_cell.fill = SECTION_FILL
+    header_cell.fill = C.SECTION_FILL
 
     pivot_address["start_row"] = start_row
     pivot_address["start_col"] = start_col
@@ -99,13 +87,13 @@ def write_multi_index_pivot(
                 row=current_row, column=start_col, value=assigned_group
             )
             group_cell.font = Font(bold=True)
-            group_cell.border = THIN_BOTTOM
+            group_cell.border = C.THIN_BOTTOM
 
             # Write total for the group
             total = totals[assigned_group]
             total_cell = ws.cell(row=current_row, column=start_col + 1, value=total)
             total_cell.font = Font(bold=True)
-            total_cell.border = THIN_BOTTOM
+            total_cell.border = C.THIN_BOTTOM
 
             grand_total += total
 
@@ -126,13 +114,13 @@ def write_multi_index_pivot(
     # Write the grand total at the very end
     grand_cell = ws.cell(row=current_row, column=start_col, value="Grand Total")
     grand_cell.font = Font(bold=True)
-    grand_cell.fill = SECTION_FILL
-    grand_cell.border = THIN_TOP
+    grand_cell.fill = C.SECTION_FILL
+    grand_cell.border = C.THIN_TOP
 
     grand_cell = ws.cell(row=current_row, column=start_col + 1, value=grand_total)
     grand_cell.font = Font(bold=True)
-    grand_cell.fill = SECTION_FILL
-    grand_cell.border = THIN_TOP
+    grand_cell.fill = C.SECTION_FILL
+    grand_cell.border = C.THIN_TOP
 
     # Set column width
     autofit_colums(ws, start_col=start_col, end_col=start_col + 1)
@@ -177,7 +165,7 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
         ws=ws_calc,
         pivot_df=overdue_pivot,
         start_row=1,
-        start_col=1,
+        start_col=C.PIVOT1_START_COL,
         title=title,
         debug=debug,
     )
@@ -193,7 +181,7 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
         ws=ws_calc,
         pivot_df=due_date_pivot,
         start_row=1,
-        start_col=4,
+        start_col=C.PIVOT2_START_COL,
         title=title,
         debug=debug,
     )
@@ -209,7 +197,7 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
         ws=ws_calc,
         pivot_df=count_of_content_pivot,
         start_row=1,
-        start_col=8,
+        start_col=C.PIVOT3_START_COL,
         title=title,
         debug=debug,
     )
@@ -225,7 +213,7 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
         ws=ws_calc,
         pivot_df=addressed_status_pivot,
         start_row=1,
-        start_col=11,
+        start_col=C.PIVOT4_START_COL,
         title=title,
         debug=debug,
     )
@@ -255,7 +243,7 @@ def write_table(ws, start_row, start_col, title, header, rows, row_border=False)
 
     # Write the title
     cell = ws.cell(row=start_row, column=start_col, value=title)
-    cell.font = Font(bold=True, color=RED)
+    cell.font = Font(bold=True, color=C.RED)
 
     table_address["start_row"] = start_row
     table_address["start_col"] = start_col
@@ -265,7 +253,7 @@ def write_table(ws, start_row, start_col, title, header, rows, row_border=False)
     for j, header in enumerate(header):
         cell = ws.cell(row=header_row, column=start_col + j, value=header)
         cell.font = Font(bold=True)
-        cell.border = THIN_ALL_SIDES
+        cell.border = C.THIN_ALL_SIDES
 
     last_row = 0
     last_col = 0
@@ -277,7 +265,7 @@ def write_table(ws, start_row, start_col, title, header, rows, row_border=False)
                 row=data_start_row + i_row, column=start_col + j_col, value=value
             )
             if row_border:
-                cell.border = THIN_ALL_SIDES
+                cell.border = C.THIN_ALL_SIDES
             last_row = data_start_row + i_row
             last_col = start_col + j_col
 
@@ -307,7 +295,7 @@ def write_summary_tables_to_sheet(tables, ws, start_row, debug=False):
     address = write_table(
         ws=ws_calc,
         start_row=start_row,
-        start_col=1,  # Starts at first column
+        start_col=C.TABLE1_START_COL,  # Starts at first column
         title=title,
         header=header,
         rows=rows,
@@ -321,7 +309,7 @@ def write_summary_tables_to_sheet(tables, ws, start_row, debug=False):
     address = write_table(
         ws=ws_calc,
         start_row=start_row,
-        start_col=9,  # starts at 9th column
+        start_col=C.TABLE2_START_COL,  # starts at 9th column
         title=title,
         header=header,
         rows=rows,
