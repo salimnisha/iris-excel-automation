@@ -80,7 +80,14 @@ def build_open_review_notes_table(base_date_str, pivot_ranges, start_row, debug=
 
         # 6. As of [Prev Date], blank
         # Leave this column blank to fill in manually
-        row_content.append("")
+        # row_content.append("") # add a blank value
+
+        # << ------ Temporary hardcoding ----
+        # Temporarily hard-coding 'as of previous date' values, so we can generate the reports properly
+        # [ ] TODO: Delete this block after deciding how to get prev date values. For now, getting the values from a temp tab called 'PrevDate' with the values
+        # =VLOOKUP(A51,PrevDate!$A$1:$B$35,2,FALSE)
+        formula_str = f'=IF(OR(A{current_row}="Audit",A{current_row}="TA"),"",IFERROR(VLOOKUP(A{current_row},PrevDate!$A$2:$B$36,2,FALSE), 0))'
+        row_content.append(formula_str)
 
         # 7. Difference, diff
         # =IF(OR(A50="Audit",A50="TA"),"",E50-F50)
