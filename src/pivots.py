@@ -17,10 +17,10 @@ def build_overdue_pivot(df: pd.DataFrame, debug: bool = False):
         raise ValueError(f"Missing columns for overdue_pivot: {missing}")
 
     # Filter for Aged
-    df1 = df[df["Aged"] > 0]
+    filtered_df = df[df["Aged"] > 0].copy()
 
-    # Build pivot
-    pivot = df1.pivot_table(values=values, index=rows, aggfunc="count").rename(
+    # Build pivot (keep the #N/A values because we want to display them as well)
+    pivot = filtered_df.pivot_table(values=values, index=rows, aggfunc="count").rename(
         columns={"Content": "Overdue"}
     )
 
