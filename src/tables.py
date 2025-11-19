@@ -139,7 +139,8 @@ def build_addressed_review_notes_table(
     p4_end_row = p4["end_row"]
     p4_num_rows = p4_end_row - p4_start_row + 1  # Number of rows of the table
 
-    header_row = start_row + 1
+    header_row = start_row + 1  # start_row is the row where table starts (with title)
+    first_data_row = header_row + 1
     rows = []
     for row_val in range(p4_num_rows):
         current_row = header_row + 1 + row_val  # row_val starts at 0
@@ -161,7 +162,18 @@ def build_addressed_review_notes_table(
 
         # 3. As of [Prev Date], blank
         # Leave this column blank to fill in manually
-        row_content.append("")
+        # row_content.append("")
+
+        # << ------ Temporary hardcoding ----
+        # Temporarily hard-coding 'as of previous date' values, so we can generate the reports properly
+        # [ ] TODO: Delete this block after deciding how to get prev date values. For now, getting the values from a temp tab called 'PrevDate' with the values
+        # =VLOOKUP(A51,PrevDate!$D:$E,2,FALSE)
+        # The very last row is Total, so check for last row and amend formula
+        if current_row == (first_data_row + p4_num_rows - 1):
+            formula_str = f"=SUM(K{first_data_row}:K{current_row - 1})"
+        else:
+            formula_str = f'=IF(OR(I{current_row}="Audit",I{current_row}="TA"),"",IFERROR(VLOOKUP(I{current_row},PrevDate!$D:$E,2,FALSE), 0))'
+        row_content.append(formula_str)
 
         # 4. Difference, diff
         # =IF(OR(I50="Audit",I50="TA"),"",J50-K50)
@@ -182,7 +194,86 @@ def build_addressed_review_notes_table(
     return table
 
 
-def get_all_tables(base_date_str, pivot_ranges, start_row, debug=False):
+def build_signoff_aging_table(sync_time_str, pivot_ranges, start_row, debug=False):
+    """Prepare the 3rd summary table under pivots"""
+
+    # Initialize table data to return (keys: title, header, rows)
+    table = {}
+
+    title = sync_time_str
+
+    # Header row values
+    header = ["Row Labels", "Count of Workflow", "Previous Count", "Differences"]
+
+    # ==================================================================
+    # Prepare the row values
+    #   The table uses formulas to look up the pivot table above.
+    #   p5 - signoff_aging pivot
+    #   This table is essentially the same as the pivot table, plus 2 columns
+    #   to calculate the difference from prev date's values
+    # ==================================================================
+
+    # Pivot range
+    p5 = pivot_ranges["signoff_aging"]
+
+    p5_start_row = p5["start_row"] + 1  # Add 1 because start_row is "Row Labels"
+    p5_end_row = p5["end_row"]
+    p5_num_rows = p5_end_row - p5_start_row + 1  # number of rows of the table
+
+    header_row = start_row + 1  # start_row is the row where table starts (with title)
+    first_data_row = header_row + 1
+    rows = []
+    for row_val in range(p5_num_rows):
+        current_row = first_data_row + row_val  # row_val starts at 0
+        p5_row = p5_start_row + row_val  # row in pivot5
+
+        row_content = []
+
+        # 1. 'Row Labels' - Column N
+        # Formula '=N4'
+        formula_str = f"=N{p5_row}"
+        row_content.append(formula_str)
+
+        # 2. 'Count of Workflow' - Column O
+        # Formula '=O4'
+        formula_str = f"=O{p5_row}"
+        row_content.append(formula_str)
+
+        # 3. 'Previous Count', blank
+        # Leave this column blank to fill in manually
+        # row_content.append("")
+
+        # << ------ Temporary hardcoding ----
+        # Temporarily hard-coding 'as of previous date' values, so we can generate the reports properly
+        # [ ] TODO: Delete this block after deciding how to get prev date values. For now, getting the values from a temp tab called 'PrevDate' with the values
+        # =VLOOKUP(N51,PrevDate!$G:$H,2,FALSE) - reference whole column
+        # The very last row is Total, so check for last row and amend formula
+        if current_row == (first_data_row + p5_num_rows - 1):
+            formula_str = f"=SUM(P{first_data_row}:P{current_row - 1})"
+        else:
+            formula_str = f"=IFERROR(VLOOKUP(N{current_row},PrevDate!$G:$H,2,FALSE), 0)"
+        row_content.append(formula_str)
+
+        # 4. 'Differences'
+        # =(O51 - P51)
+        formula_str = f"=O{current_row}-P{current_row}"
+        row_content.append(formula_str)
+
+        rows.append(row_content)
+
+    table["title"] = title
+    table["header"] = header
+    table["rows"] = rows
+
+    if debug:
+        file_path = "debug/signoff_aging.json"
+        with open(file_path, "w") as f:
+            json.dump(table, f, indent=2)
+
+    return table
+
+
+def get_all_tables(base_date_str, last_sync_str, pivot_ranges, start_row, debug=False):
     # -----------------------------------------------------
     # Prepare the tables to write
     # -----------------------------------------------------
@@ -196,9 +287,15 @@ def get_all_tables(base_date_str, pivot_ranges, start_row, debug=False):
         base_date_str, pivot_ranges, start_row, debug=debug
     )
 
+    # Table 3: Signoff Aging table
+    signoff_aging_table = build_signoff_aging_table(
+        last_sync_str, pivot_ranges, start_row, debug=debug
+    )
+
     tables = {
         "open_notes": open_notes_table,
         "addressed_notes": addressed_notes_table,
+        "signoff_aging": signoff_aging_table,
     }
 
     return tables

@@ -110,3 +110,14 @@ def extract_base_date(ws, cell) -> datetime:
     )
 
     return base_date
+
+
+def extract_last_sync_signoff_aging_str(ws, cell) -> str:
+    """String formatted with last sync details"""
+
+    cell_value = str(ws[cell].value)
+    timestamp = cell_value.split(":", 1)[1].strip()
+
+    final_str = f"Sign-off Aging pivot (Last Synced At: {timestamp})"
+
+    return final_str

@@ -20,6 +20,7 @@ PIVOT5_START_COL = 14  # Signoff Aging
 # Columns where summary tables start
 TABLE1_START_COL = 1  # Open review notes table
 TABLE2_START_COL = 9  # Addressed review notes table
+TABLE3_START_COL = 14  # Signoff Aging table
 
 # No. of lines to leave below the longest pivot table before starting the tables
 BUFFER_LINES = 9
@@ -50,3 +51,5 @@ CALC_SHEET = "Calculations"
 REPORT_SHEET = "Report"
 BASE_DATE_SHEET = "ReviewNoteAging"
 BASE_DATE_CELL = "B4"
+LAST_SYNC_SHEET = "SignoffAging"
+LAST_SYNC_CELL = "B4"

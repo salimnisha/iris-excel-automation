@@ -127,12 +127,13 @@ def write_multi_index_pivot(
     # ----------------------------------------------------------------
     # 2. Walk through the MultiIndex and write the rows
     # ----------------------------------------------------------------
-    current_row = start_row + 1  # We start writing the row data from here
-    current_group = None  # Track the main group, or level0 index ('Audit' or 'TA')
 
-    # Calculate the totals for the level0 groups ('Audit' and 'TA')
+    # Calculate the totals for the level0 groups ('Audit', 'TA').
     totals = pivot_df.groupby(level=0)[value_col_name].sum()
     grand_total = 0
+
+    current_row = start_row + 1  # We start writing the row data from here
+    current_group = None  # Track the main group, or level0 index ('Audit' or 'TA')
 
     for (assigned_group, allocated_to), row_value in pivot_df.iterrows():
         # 🤓 df.iterrows() lets you iterate over DataFrame rows as (index, Series) pairs.
@@ -186,13 +187,13 @@ def write_multi_index_pivot(
 
     if debug:
         print(
-            "\n🐞 ====== DEBUG BLOCK START: write_multi_index_pivot (report_builder.py) ======"
+            "\n🐞 ====== DEBUG BLOCK START: write_multi_index_pivot (writers.py) ======"
         )
         print("[DEBUG] Pivot title:", title)
         print("[DEBUG] Groups written:", pivot_df.index.levels[0].to_list())
         print("[DEBUG] Total rows:", current_row - start_row)
         print(
-            "🐞 ====== DEBUG BLOCK END: write_multi_index_pivot (report_builder.py) ======\n"
+            "🐞 ====== DEBUG BLOCK END: write_multi_index_pivot (writers.py) ======\n"
         )
 
     pivot_address["end_row"] = current_row
@@ -360,6 +361,7 @@ def write_summary_tables_to_sheet(tables, ws, start_row, debug=False):
     ws_calc = ws
     open_notes_table = tables["open_notes"]
     addressed_notes_table = tables["addressed_notes"]
+    signoff_aging_table = tables["signoff_aging"]
 
     table_ranges = {
         "open_notes": {},
@@ -393,6 +395,20 @@ def write_summary_tables_to_sheet(tables, ws, start_row, debug=False):
         rows=rows,
     )
     table_ranges["addressed_notes"] = address
+
+    # Table3: Write Signoff Aging Table
+    title = signoff_aging_table["title"]
+    header = signoff_aging_table["header"]
+    rows = signoff_aging_table["rows"]
+    address = write_table(
+        ws=ws_calc,
+        start_row=start_row,
+        start_col=C.TABLE3_START_COL,
+        title=title,
+        header=header,
+        rows=rows,
+    )
+    table_ranges["signoff_aging"] = address
 
     return table_ranges
 
