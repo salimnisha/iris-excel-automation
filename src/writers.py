@@ -7,18 +7,75 @@ from openpyxl.utils import get_column_letter
 from openpyxl import load_workbook
 
 import src.constants as C
+from src.formatting import autofit_colums
 from src.excel_io import force_excel_recalc, load_values_only_workbook
 
 
-def autofit_colums(ws, start_col, end_col, padding=3):
-    """Set column width based on maximum length of content inside column"""
-    for col in range(start_col, end_col + 1):
-        col_letter = get_column_letter(col)
-        max_len = 0
-        for cell in ws[col_letter]:
-            if cell.value:
-                max_len = max(max_len, len(str(cell.value)))
-        ws.column_dimensions[col_letter].width = max_len + padding
+def write_simple_pivot(ws, pivot_df, start_row, start_col, title=None, debug=False):
+    """
+    Write a pivot table to an Excel sheet
+    at a specific location. Writes a simple flat table with 2 columns.
+
+    Returns a dict of start and end row and column values
+    {"start_row": 3, "end_row": 10, "start_col": 1, "end_col": 2}
+    """
+
+    # Initialize address to return
+    pivot_address = {}
+
+    print("pivot_df on entry:", pivot_df)
+    # ----------------------------------------------------------------
+    # 1. Write the header row(s)
+    # ----------------------------------------------------------------
+    # Title header
+    if title:
+        header_cell = ws.cell(row=start_row, column=start_col, value=title)
+        header_cell.font = Font(bold=True)
+        header_cell.fill = C.HEADER_FILL
+        header_cell = ws.cell(row=start_row, column=start_col + 1, value="")
+        header_cell.fill = C.HEADER_FILL
+
+        start_row = start_row + 2  # Leave one row below before pivot data header
+
+    # Write header
+    value_col_name = pivot_df.columns.to_list()[0]
+    header_cell = ws.cell(row=start_row, column=start_col, value="Row Labels")
+    header_cell.font = Font(bold=True)
+    header_cell.fill = C.SECTION_FILL
+    header_cell = ws.cell(row=start_row, column=start_col + 1, value=value_col_name)
+    header_cell.font = Font(bold=True)
+    header_cell.fill = C.SECTION_FILL
+
+    # Write data
+    current_row = start_row + 1  # Row after header
+    for index, row_val in pivot_df.iterrows():
+        for j, col_name in enumerate(pivot_df.columns, start=start_col):
+            ws.cell(row=current_row, column=j, value=index)
+            ws.cell(row=current_row, column=j + 1, value=row_val[col_name])
+            current_row += 1
+
+    # Calculate grand_total and write to last row
+    grand_total = pivot_df[value_col_name].sum()
+    grand_cell = ws.cell(row=current_row, column=start_col, value="Total")
+    grand_cell.font = Font(bold=True)
+    grand_cell.fill = C.SECTION_FILL
+    grand_cell.border = C.THIN_TOP
+
+    grand_cell = ws.cell(row=current_row, column=start_col + 1, value=grand_total)
+    grand_cell.font = Font(bold=True)
+    grand_cell.fill = C.SECTION_FILL
+    grand_cell.border = C.THIN_TOP
+
+    # Set column width
+    autofit_colums(ws, start_col=start_col, end_col=start_col + 1, limit_width=True)
+
+    # Range occupied by the pivot table
+    pivot_address["start_row"] = start_row
+    pivot_address["start_col"] = start_col
+    pivot_address["end_row"] = current_row
+    pivot_address["end_col"] = start_col + 1  # this is our second header_cell
+
+    return pivot_address
 
 
 def write_multi_index_pivot(
@@ -126,7 +183,7 @@ def write_multi_index_pivot(
     grand_cell.border = C.THIN_TOP
 
     # Set column width
-    autofit_colums(ws, start_col=start_col, end_col=start_col + 1)
+    autofit_colums(ws, start_col=start_col, end_col=start_col + 1, limit_width=True)
 
     if debug:
         print(
@@ -141,7 +198,6 @@ def write_multi_index_pivot(
 
     pivot_address["end_row"] = current_row
 
-    # return current_row
     return pivot_address
 
 
@@ -179,7 +235,7 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
     )
 
     # Pivot2: Write Due within 1-14 days pivot
-    title = "Filter: 'Due Date' 1-14 days"
+    title = "Filter Applied: 'Due Date' 1-14 days (inclusive of start date)"
     address = write_multi_index_pivot(
         ws=ws_calc,
         pivot_df=due_date_pivot,
@@ -364,11 +420,7 @@ def copy_range_values_only(
 
 
 def copy_table_to_report(
-    src_path,
-    wb_src,
-    table_range,
-    report_start_row,
-    report_start_col,
+    src_path, wb_src, table_range, report_start_row, report_start_col, debug=False
 ):
     """Copy the calculated table range from source sheet (Calculations) to destination sheet (Report), given the table range
 
