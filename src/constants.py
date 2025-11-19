@@ -3,11 +3,18 @@ from openpyxl.styles import PatternFill, Font, Border, Side
 # Files
 SOURCE_FILE = r"Ongoing Deliverable_US-1-US AU-1896858.1_Synopsys Inc._GDC EMSS PM Support_10.29.2025.xlsx"
 
-# Columns where pivots start
+# Rows and Columns where pivots start
+PIVOT1_START_ROW = 1  # Overdue pivot
+PIVOT2_START_ROW = 1  # Due date 1-14 days
+PIVOT3_START_ROW = 1  # Count of content
+PIVOT4_START_ROW = 1  # Status is Addressed
+PIVOT5_START_ROW = 1  # Signoff Aging
+
 PIVOT1_START_COL = 1  # Overdue pivot
 PIVOT2_START_COL = 4  # Due date 1-14 days
 PIVOT3_START_COL = 8  # Count of content
 PIVOT4_START_COL = 11  # Status is Addressed
+PIVOT5_START_COL = 14  # Signoff Aging
 
 
 # Columns where summary tables start
@@ -33,6 +40,11 @@ RED = "FF0000"
 # Source data for dataframe
 DF1_SHEET = "ReviewNoteAging"
 DF1_SHEET_HEADER = 6  # Data starts in excel row 7 => header 7
+
+DF2_SHEET = "SignoffAging"
+DF2_SHEET_HEADER = 6  # Data starts in excel row 7 => header 7
+
+
 # Sheet names
 CALC_SHEET = "Calculations"
 REPORT_SHEET = "Report"

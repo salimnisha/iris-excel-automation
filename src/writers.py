@@ -23,7 +23,6 @@ def write_simple_pivot(ws, pivot_df, start_row, start_col, title=None, debug=Fal
     # Initialize address to return
     pivot_address = {}
 
-    print("pivot_df on entry:", pivot_df)
     # ----------------------------------------------------------------
     # 1. Write the header row(s)
     # ----------------------------------------------------------------
@@ -210,12 +209,14 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
     due_date_pivot = pivots["due_date"]
     count_of_content_pivot = pivots["count_of_content"]
     addressed_status_pivot = pivots["addressed_status"]
+    signoff_aging_pivot = pivots["signoff_aging"]
 
     pivots_ranges = {
         "overdue": {},
         "due_date": {},
         "count_of_content": {},
         "addressed_status": {},
+        "signoff_aging": {},
     }
 
     # Pivot1: Write Overdue pivot
@@ -223,7 +224,7 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
     address = write_multi_index_pivot(
         ws=ws_calc,
         pivot_df=overdue_pivot,
-        start_row=1,
+        start_row=C.PIVOT1_START_ROW,
         start_col=C.PIVOT1_START_COL,
         title=title,
         debug=debug,
@@ -239,7 +240,7 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
     address = write_multi_index_pivot(
         ws=ws_calc,
         pivot_df=due_date_pivot,
-        start_row=1,
+        start_row=C.PIVOT2_START_ROW,
         start_col=C.PIVOT2_START_COL,
         title=title,
         debug=debug,
@@ -255,7 +256,7 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
     address = write_multi_index_pivot(
         ws=ws_calc,
         pivot_df=count_of_content_pivot,
-        start_row=1,
+        start_row=C.PIVOT3_START_ROW,
         start_col=C.PIVOT3_START_COL,
         title=title,
         debug=debug,
@@ -271,7 +272,7 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
     address = write_multi_index_pivot(
         ws=ws_calc,
         pivot_df=addressed_status_pivot,
-        start_row=1,
+        start_row=C.PIVOT4_START_ROW,
         start_col=C.PIVOT4_START_COL,
         title=title,
         debug=debug,
@@ -279,6 +280,24 @@ def write_pivot_tables_to_sheet(pivots, ws, debug=False):
     pivots_ranges["addressed_status"] = address
     print(
         "\n✅ 4. Addressed Status pivot written to Calculations tab up to row",
+        address["end_row"],
+    )
+
+    # Pivot5: Signoff Aging [with Signoff Role != ('In-Charge' or 'Senior')]
+    #   Note: This is a simple pivot with just one index, not a multi-index pivot
+    #   So call the write_simple_pivot method
+    title = "Signoff Role != ('In-Charge' or 'Senior')"
+    address = write_simple_pivot(
+        ws=ws_calc,
+        pivot_df=signoff_aging_pivot,
+        start_row=C.PIVOT4_START_ROW,
+        start_col=C.PIVOT5_START_COL,
+        title=title,
+        debug=debug,
+    )
+    pivots_ranges["signoff_aging"] = address
+    print(
+        "\n✅ 5. Signoff aging pivot written to Calculations tab up to row",
         address["end_row"],
     )
 

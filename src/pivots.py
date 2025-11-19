@@ -213,18 +213,24 @@ def build_signoff_aging_pivot(df: pd.DataFrame, debug: bool = False):
     return pivot
 
 
-def get_all_pivot_tables(df, base_date, debug=False):
+def get_all_pivot_tables(dfs, base_date, debug=False):
     """Prepare the required pivot tables and return as a list"""
+
+    # Unpack the dfs dict that contain two dataframes from 'ReviewNoteAging' and 'SignoffAging'
+    df_reviewnote = dfs["reviewnote_aging"]
+    df_signoff = dfs["signoff_aging"]
 
     # -----------------------------------------------------
     # Prepare the pivot tables
     # -----------------------------------------------------
     # Pivot1: Overdue pivot
-    overdue_pivot = build_overdue_pivot(df=df, debug=debug)
+    overdue_pivot = build_overdue_pivot(df=df_reviewnote, debug=debug)
 
     # Pivot2: Overdue pivot
     if base_date:
-        due_date_pivot = build_due_date_pivot(df, base_date, debug=debug)
+        due_date_pivot = build_due_date_pivot(
+            df=df_reviewnote, base_date=base_date, debug=debug
+        )
     else:
         # Empty pivot
         due_date_pivot = df.iloc[0:0].pivot_table(
@@ -232,16 +238,20 @@ def get_all_pivot_tables(df, base_date, debug=False):
         )
 
     # Pivot3: Count of content pivot
-    count_of_content_pivot = build_count_of_content_pivot(df, debug=debug)
+    count_of_content_pivot = build_count_of_content_pivot(df=df_reviewnote, debug=debug)
 
     # Pivot4: Addressed Status pivot
-    addressed_status_pivot = build_addressed_status_pivot(df, debug=debug)
+    addressed_status_pivot = build_addressed_status_pivot(df=df_reviewnote, debug=debug)
+
+    # Pivot5: Signoff Aging pivot
+    signoff_aging_pivot = build_signoff_aging_pivot(df=df_signoff, debug=debug)
 
     pivots = {
         "overdue": overdue_pivot,
         "due_date": due_date_pivot,
         "count_of_content": count_of_content_pivot,
         "addressed_status": addressed_status_pivot,
+        "signoff_aging": signoff_aging_pivot,
     }
 
     return pivots
