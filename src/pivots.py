@@ -25,9 +25,7 @@ def build_overdue_pivot(df: pd.DataFrame, debug: bool = False):
     )
 
     if debug:
-        print(
-            "\n🐞 ====== DEBUG BLOCK START: build_overdue_pivot (report_builder.py) ======"
-        )
+        print("\n🐞 ====== DEBUG BLOCK START: build_overdue_pivot (pivots.py) ======")
         # Check if the dataframe structure is correct. MultiIndex expected
         print("[DEBUG] Pivot Index Type:", type(pivot.index))  # Expected: MultiIndex
         print(
@@ -44,9 +42,7 @@ def build_overdue_pivot(df: pd.DataFrame, debug: bool = False):
         pivot.to_csv("debug/debug_pivot1.csv", index=True)
         pivot.to_pickle("debug/debug_pivot1.pkl")
         print("🐞 Saved intermediate pivot1 to debug_pivot1.csv and debug_pivot1.pkl")
-        print(
-            "🐞 ====== DEBUG BLOCK END: build_overdue_pivot (report_builder.py) ====== \n"
-        )
+        print("🐞 ====== DEBUG BLOCK END: build_overdue_pivot (pivots.py) ====== \n")
 
     return pivot
 
@@ -75,9 +71,7 @@ def build_due_date_pivot(df: pd.DataFrame, base_date: datetime, debug: bool = Fa
     )
 
     if debug:
-        print(
-            "\n🐞 ====== DEBUG BLOCK START: build_due_date_pivot (report_builder.py) ======"
-        )
+        print("\n🐞 ====== DEBUG BLOCK START: build_due_date_pivot (pivots.py) ======")
         # Check dataframe structure. MultiIndex expected
         print("[DEBUG] Pivot Index type:", type(pivot1.index))
         print(
@@ -92,9 +86,7 @@ def build_due_date_pivot(df: pd.DataFrame, base_date: datetime, debug: bool = Fa
         pivot1.to_csv("debug/debug_pivot2.csv", index=True)
         pivot1.to_pickle("debug/debug_pivot2.pkl")
         print("🐞 Saved pivot2 dump into debug_pivot2.csv and debug_pivot2.pkl")
-        print(
-            "🐞 ====== DEBUG BLOCK END: build_due_date_pivot (report_builder.py) ====== \n"
-        )
+        print("🐞 ====== DEBUG BLOCK END: build_due_date_pivot (pivots.py) ====== \n")
 
     return pivot1
 
@@ -115,7 +107,7 @@ def build_count_of_content_pivot(df: pd.DataFrame, debug: bool = False):
 
     if debug:
         print(
-            "\n🐞 ====== DEBUG BLOCK START: build_count_of_content_pivot (report_builder.py) ======"
+            "\n🐞 ====== DEBUG BLOCK START: build_count_of_content_pivot (pivots.py) ======"
         )
         # Check if the dataframe structure is correct. MultiIndex expected
         print("[DEBUG] Pivot Index Type:", type(pivot.index))  # Expected: MultiIndex
@@ -134,7 +126,7 @@ def build_count_of_content_pivot(df: pd.DataFrame, debug: bool = False):
         pivot.to_pickle("debug/debug_pivot3.pkl")
         print("🐞 Saved intermediate pivot1 to debug_pivot3.csv and debug_pivot3.pkl")
         print(
-            "🐞 ====== DEBUG BLOCK END: build_count_of_content_pivot (report_builder.py) ====== \n"
+            "🐞 ====== DEBUG BLOCK END: build_count_of_content_pivot (pivots.py) ====== \n"
         )
 
     return pivot
@@ -144,7 +136,7 @@ def build_addressed_status_pivot(df: pd.DataFrame, debug: bool = False):
     rows = ["Created by group", "Created By"]
     values = "Content"
 
-    required = ["Created by group", "Created By", "Content"]
+    required = ["Created by group", "Created By", "Content", "Status"]
     missing = [col for col in required if col not in df.columns]
     if missing:
         raise ValueError(f"Missing columns for addressed_status_pivot: {missing}")
@@ -159,7 +151,7 @@ def build_addressed_status_pivot(df: pd.DataFrame, debug: bool = False):
 
     if debug:
         print(
-            "\n🐞 ====== DEBUG BLOCK START: build_addressed_status_pivot (report_builder.py) ======"
+            "\n🐞 ====== DEBUG BLOCK START: build_addressed_status_pivot (pivots.py) ======"
         )
         # Check if the dataframe structure is correct. MultiIndex expected
         print("[DEBUG] Pivot Index Type:", type(pivot.index))  # Expected: MultiIndex
@@ -178,7 +170,44 @@ def build_addressed_status_pivot(df: pd.DataFrame, debug: bool = False):
         pivot.to_pickle("debug/debug_pivot4.pkl")
         print("🐞 Saved intermediate pivot to debug_pivot4.csv and debug_pivot4.pkl")
         print(
-            "🐞 ====== DEBUG BLOCK END: build_addressed_status_pivot (report_builder.py) ====== \n"
+            "🐞 ====== DEBUG BLOCK END: build_addressed_status_pivot (pivots.py) ====== \n"
+        )
+
+    return pivot
+
+
+def build_signoff_aging_pivot(df: pd.DataFrame, debug: bool = False):
+    df_row = "Assignee"
+    df_value = "Workflow"
+    df_filter_col = "Signoff Role"
+
+    required = [df_row, df_value, df_filter_col]
+    missing = [col for col in required if col not in df.columns]
+    if missing:
+        raise ValueError(f"Missing columns for signoff_aging pivot: {missing}")
+
+    # Filter for Sign-off Role
+    filtered_df = df[
+        (df["Signoff Role"] != "In-Charge") & (df["Signoff Role"] != "Senior")
+    ]
+
+    # Build pivot table
+    pivot = filtered_df.pivot_table(values=df_value, index=df_row, aggfunc="count")
+
+    if debug:
+        print(
+            "🐞 ====== DEBUG BLOCK START: build_signoff_aging_pivot (pivots.py) ====== \n"
+        )
+        print(f"[DEBUG] Pivot index names: {pivot.index.names}")
+        print(f"[DEBUG] Pivot columns: {pivot.columns}")
+        print(f"[DEBUG] Pivot previes: {pivot.head(5)}")
+
+        # Write to debug file
+        pivot.to_csv("debug/debug_pivot5.csv", index=True)
+        pivot.to_pickle("debug/debug_pivot5.pkl")
+        print("🐞 Saved intermediate pivot to debug_pivot5.csv and debug_pivot5.pkl")
+        print(
+            "🐞 ====== DEBUG BLOCK END: build_signoff_aging_pivot (pivots.py) ====== \n"
         )
 
     return pivot
