@@ -10,14 +10,16 @@ from src.excel_io import (
     make_copy,
     extract_base_date,
     read_excel_dataframe,
+    extract_last_sync_signoff_aging_str,
 )
 from src.pivots import get_all_pivot_tables
 from src.writers import (
     write_pivot_tables_to_sheet,
     write_summary_tables_to_sheet,
-    copy_table_to_report,
+    copy_all_tables_to_report,
 )
 from src.tables import get_all_tables
+from src.formatting import format_all_reports
 import src.constants as C
 
 # ======================================
@@ -41,7 +43,7 @@ def main():
 
     # ===================================================================
     # PIVOT TABLES
-    #   Read ReviewNoteAging and Signoff Aging tabs, and load dataframe to build pivots
+    #   Read ReviewNoteAging and Signoff Aging tabs, and load dataframes to build pivots
     df_reviewnote_aging = read_excel_dataframe(
         file_name=working_copy_file,
         sheet_name=C.DF1_SHEET,
@@ -58,26 +60,38 @@ def main():
     )
     df_signoff_aging.columns = df_signoff_aging.columns.str.strip()
 
+    # Collect the dataframes in a dict
     dfs = {"reviewnote_aging": df_reviewnote_aging, "signoff_aging": df_signoff_aging}
 
-    #   Build and write pivots to sheet
+    #   Build and write pivots to sheet, pass the dfs dict
     pivots = get_all_pivot_tables(dfs, base_date, debug=DEBUG)
     pivot_ranges = write_pivot_tables_to_sheet(
         pivots, wb_main[C.CALC_SHEET], debug=DEBUG
     )
 
+    # print("Pivot ranges:", pivot_ranges)
+
     # ===================================================================
     # SUMMARY TABLES
-    #   Prepare arguments to build and write summary tables under pivots
+    #   Find position in sheet to write summary tables below pivots, without any overwrites
     max_val = max(pivot["end_row"] for pivot in pivot_ranges.values())
     table_start_row = max_val + C.BUFFER_LINES  # buffer rows after pivots
+
+    # Strings for table titles
     base_date_str = base_date.strftime("%m/%d/%Y")
+    last_sync_str = extract_last_sync_signoff_aging_str(
+        ws=wb_main[C.LAST_SYNC_SHEET], cell=C.LAST_SYNC_CELL
+    )
 
     #   Build and write summary tables to sheet
-    tables = get_all_tables(base_date_str, pivot_ranges, table_start_row, debug=DEBUG)
+    tables = get_all_tables(
+        base_date_str, last_sync_str, pivot_ranges, table_start_row, debug=DEBUG
+    )
     table_ranges = write_summary_tables_to_sheet(
         tables, wb_main[C.CALC_SHEET], table_start_row, debug=DEBUG
     )
+
+    # print(table_ranges)
 
     # Save the file before generating the reports
     wb_main.save(working_copy_file)
@@ -86,19 +100,48 @@ def main():
     # GENERATE FORMATTED REPORTS
     #   Prepare reports in 'Report' sheet and format them
 
-    r1_range = copy_table_to_report(
-        src_path=working_copy_file,
+    report_ranges = copy_all_tables_to_report(
+        file_path=working_copy_file,
         wb_src=wb_main,
-        table_range=table_ranges["open_notes"],
-        report_start_row=1,
-        report_start_col=1,
+        table_ranges=table_ranges,
+        debug=DEBUG,
     )
+
+    # print("MAIN - Report ranges:", report_ranges)
+    format_all_reports(ws_report=wb_main[C.REPORT_SHEET], report_ranges=report_ranges)
+
+    # r1_range = copy_table_to_report(
+    #     src_path=working_copy_file,
+    #     wb_src=wb_main,
+    #     table_range=table_ranges["open_notes"],
+    #     report_start_row=C.REPORT1_START_ROW,
+    #     report_start_col=C.REPORT1_START_COL,
+    # )
+    # format_open_notes_report(ws_report=wb_main[C.REPORT_SHEET], report_range=r1_range)
+
+    # r2_range = copy_table_to_report(
+    #     src_path=working_copy_file,
+    #     wb_src=wb_main,
+    #     table_range=table_ranges["addressed_notes"],
+    #     report_start_row=C.REPORT2_START_ROW,
+    #     report_start_col=C.REPORT2_START_COL,
+    # )
+
+    # r3_range = copy_table_to_report(
+    #     src_path=working_copy_file,
+    #     wb_src=wb_main,
+    #     table_range=table_ranges["signoff_aging"],
+    #     report_start_row=C.REPORT3_START_ROW,
+    #     report_start_col=C.REPORT3_START_COL,
+    # )
+
+    # print([r1_range, r2_range, r3_range])
 
     wb_main.save(working_copy_file)
     wb_main.close()
 
-    print("Range:", r1_range)
-    print("Test value", wb_main["Report"]["A4"].value)
+    # print("Range:", r1_range)
+    # print("Test value", wb_main["Report"]["A4"].value)
 
 
 # ======================================

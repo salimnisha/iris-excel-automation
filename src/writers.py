@@ -490,3 +490,69 @@ def copy_table_to_report(
     )
 
     return report_range
+
+
+def copy_all_tables_to_report(file_path, wb_src, table_ranges, debug=False):
+    """Copy all tables created in Calculations sheet to the Report sheet for formatting
+
+        Returns a dict of report ranges
+
+    Args:
+        src_path (str): full path of sourcefile with extension
+        wb_src (Openpyxl Workbook): Main workbook that the reports are written into
+        table_ranges (dict): Table co-ordinates
+        debug (bool, optional): Debug print or not. Defaults to False.
+    """
+
+    # Unpack table dict
+    open_notes_table = table_ranges["open_notes"]  # Table 1
+    addressed_notes_table = table_ranges["addressed_notes"]  # Table 2
+    signoff_aging_table = table_ranges["signoff_aging"]  # Table 3
+
+    # Initialize report range dict to return
+    report_ranges = {}
+
+    # Write each table
+    # Table 1: Open Review Notes table
+    open_notes_start_row = C.REPORT1_START_ROW
+    open_notes_start_col = C.REPORT1_START_COL
+
+    if open_notes_table:
+        r1_range = copy_table_to_report(
+            src_path=file_path,
+            wb_src=wb_src,
+            table_range=open_notes_table,
+            report_start_row=open_notes_start_row,
+            report_start_col=open_notes_start_col,
+        )
+        report_ranges["open_notes"] = r1_range
+
+    # Table 2: Addressed Review Notes table
+    addressed_notes_start_row = C.REPORT2_START_ROW
+    addressed_notes_start_col = C.REPORT2_START_COL
+
+    if addressed_notes_table:
+        r2_range = copy_table_to_report(
+            src_path=file_path,
+            wb_src=wb_src,
+            table_range=addressed_notes_table,
+            report_start_row=addressed_notes_start_row,
+            report_start_col=addressed_notes_start_col,
+        )
+        report_ranges["addressed_notes"] = r2_range
+
+    # Table 1: Signoff Aging table
+    signoff_aging_start_row = C.REPORT3_START_ROW
+    signoff_aging_start_col = C.REPORT3_START_COL
+
+    if signoff_aging_table:
+        r3_range = copy_table_to_report(
+            src_path=file_path,
+            wb_src=wb_src,
+            table_range=signoff_aging_table,
+            report_start_row=signoff_aging_start_row,
+            report_start_col=signoff_aging_start_col,
+        )
+        report_ranges["signoff_aging_notes"] = r3_range
+
+    return report_ranges

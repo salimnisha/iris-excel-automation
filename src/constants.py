@@ -17,10 +17,29 @@ PIVOT4_START_COL = 11  # Status is Addressed
 PIVOT5_START_COL = 14  # Signoff Aging
 
 
-# Columns where summary tables start
+# Columns where summary tables start (start row is a few BUFFER_LINES below the longest pivot)
 TABLE1_START_COL = 1  # Open review notes table
 TABLE2_START_COL = 9  # Addressed review notes table
 TABLE3_START_COL = 14  # Signoff Aging table
+
+# Coordinates of Reports
+# Report 1 - Open Review Notes
+REPORT1_START_ROW = 1
+REPORT1_START_COL = 1
+REPORT1_GRAND_TOTAL_COL = 5
+REPORT1_DIFFERENCE_COL = 7
+
+# Report 2 - Addressed Review Notes
+REPORT2_START_ROW = 1
+REPORT2_START_COL = 9
+REPORT2_ADDRESSED_COL = 10
+REPORT2_DIFFERENCE_COL = 12
+
+# Report 3 - Signoff Aging
+REPORT3_START_ROW = 1
+REPORT3_START_COL = 14
+REPORT3_DIFFERENCE_COL = 17
+
 
 # No. of lines to leave below the longest pivot table before starting the tables
 BUFFER_LINES = 9
